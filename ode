@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+
+# "strict mode"
+set -eu -o pipefail
+
+readonly me=${0##*/}
+
+usage () {
+	cat <<EOF >&2
+usage: $me
+       $me -s
+A poem.
+
+options:
+  -s         \`say\` the poem
+  -h         display this help and exit
+  -v [NAME]  use voice NAME, implies [-s]
+EOF
+
+}
+delay () {
+	local i
+
+	for ((i=0;i<"$1";i++)); do
+		:
+	done
+}
+
+slideleft_in () {
+	local c llen line termwidth
+
+        line="$(expand -t 8 <<<"$1")"
+	llen=1
+	termwidth=$(tput cols)
+
+	for ((c=termwidth;c>=0;c--)); do
+		if [[ "$llen" -le "${#line}" && $llen -le "$termwidth" ]]; then
+			echo -en "\033[${c}G${line:0:$llen}"
+		elif [ "$llen" -le "$termwidth" ]; then
+			echo -en "\033[${c}G${line:0:$llen} "
+		fi
+
+		delay 1000
+		((llen++))
+	done
+}
+
+slideright_in () {
+	local line lwidth
+
+        line="$(expand -t 8 <<<"$1")"
+
+	for ((lwidth=$(( ${#line} - 1 ));lwidth>=0;lwidth--)); do
+		echo -en "${line:$lwidth}\033[G"
+		delay 1000
+	done
+
+	echo -en "\033[$(( ${#line} + 1 ))G"
+}
+
+slideleft_out () {
+	local c line
+
+        line="$(expand -t 8 <<<"$1")"
+
+	for ((c=1;c<=${#line};c++));do
+		echo -en "\033[G${line:$c} "
+		delay 1000
+	done
+}
+
+slideright_out () {
+	local c line llen termwidth 
+
+        line="$(expand -t 8 <<<"$1")"
+	termwidth=$(tput cols)
+
+	for ((c=1;c<=termwidth;c++));do
+		llen=$(( termwidth - c ))
+		echo -en "\033[${c}G ${line:0:$llen}"
+		delay 1000
+	done
+}
+
+# options
+sound=0
+voice="Daniel"
+
+while getopts ":hsv:" opt; do
+	case $opt in
+		h ) usage; exit 0 ;;
+		s ) sound=1 ;;
+		v ) voice="$OPTARG"; sound=1 ;;
+		? ) usage; exit 1 ;;
+	esac
+done
+
+shift $((OPTIND - 1))
+
+if ! say -v '?' | grep -q -i -w "$voice"; then
+	echo "$me: $voice: Voice not found"
+	exit 1
+fi
+
+clear
+echo
+
+slideright_in "				(r)Ode to 500"
+echo
+echo
+echo
+[ "$sound" -eq "1" ] && say -v "$voice" "Rode to 500. [[slnc 800]]. A poem. [[slnc 1100]]. ahem."
+sleep 3
+
+slideright_in "	Barriers, Buddhism, comics, concerns,"
+echo
+echo
+[ "$sound" -eq "1" ] && say -v "$voice" "Barriers, Buddhism, comics, concerns."
+sleep 1
+
+slideleft_in "			Reporting live from the show floor,"
+echo
+echo
+[ "$sound" -eq "1" ] && say -v "$voice" "Reporting lyve from the show floor."
+sleep 1
+
+slideright_in "				#productivity, habits, hygiene, films,"
+echo
+echo
+[ "$sound" -eq "1" ] && say -v "$voice" "Productivity, habits, hygiene, films."
+sleep 1
+
+slideleft_in "					The Florida of yore..."
+echo
+echo
+[ "$sound" -eq "1" ] && say -v "$voice" "The Florida [[slnc 200]] of yore..."
+sleep 2
+
+slideright_in "				You helped a lot of people,"
+echo
+echo
+[ "$sound" -eq "1" ] && say -v "$voice" "You helped a lot of people."
+sleep 1
+
+slideleft_in "			We enjoyed them all,"
+echo
+echo
+[ "$sound" -eq "1" ] && say -v "$voice" "We enjoyed them all."
+sleep 1
+
+slideright_in "	And look forward to many more..."
+echo
+echo
+[ "$sound" -eq "1" ] && say -v "$voice" "And look forward 2 [[slnc 60]] manee [[slnc 40]] more."
+sleep 1
+
+exit
